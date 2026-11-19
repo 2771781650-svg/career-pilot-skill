@@ -1,0 +1,87 @@
+{
+  "schema_version": "1.0",
+  "skill": {
+    "name": "career-pilot",
+    "display_name": "职途 CareerPilot · AI 求职赋能技能",
+    "version": "1.3.0",
+    "track": "AI就业赋能赛道",
+    "summary": "面向高职/大学生的求职赋能技能：简历生成、简历体检、岗位匹配、岗位推荐、模拟面试出题与点评、8 周职业规划，七个可被独立调用的子能力，无大模型 Key 也能跑。",
+    "homepage": "https://github.com/2771781650-svg/career-pilot-skill",
+    "entry": {
+      "cli": "python skill_api.py",
+      "python": "from skill_api import invoke",
+      "http": "POST /api/skill/{tool_name}（见 server.py）"
+    },
+    "capabilities": [
+      {
+        "name": "build_resume",
+        "description": "生成简历草案：按目标岗位分组技能、STAR 化经历、投放岗位关键词，输出可编辑简历文本。",
+        "parameters": {
+          "name": {"type": "string", "required": false, "desc": "姓名"},
+          "edu": {"type": "string", "required": false, "desc": "学历/学校/专业"},
+          "skills": {"type": "string", "required": false, "desc": "技能，逗号分隔"},
+          "experience": {"type": "string", "required": false, "desc": "项目或实践经历，分号分隔"},
+          "target_job": {"type": "string", "required": false, "desc": "目标岗位"},
+          "contact": {"type": "string", "required": false, "desc": "联系方式"},
+          "certs": {"type": "string", "required": false, "desc": "证书与荣誉"}
+        },
+        "returns": {"type": "string", "desc": "简历草案文本"}
+      },
+      {
+        "name": "analyze_resume",
+        "description": "简历体检：学历/技能/项目/经历/证书五维加权评分，输出缺口优先级。",
+        "parameters": {
+          "resume_text": {"type": "string", "required": true, "desc": "简历全文（不少于 20 字）"}
+        },
+        "returns": {"type": "string", "desc": "体检报告文本（含总分、分项、待改进清单）"}
+      },
+      {
+        "name": "match_job",
+        "description": "岗位匹配：简历与岗位库对比，核心技能 1.5 倍加权，输出匹配度、具备/缺口与补齐路径。",
+        "parameters": {
+          "resume_text": {"type": "string", "required": true, "desc": "简历全文"},
+          "job_title": {"type": "string", "required": false, "desc": "岗位名称，为空时返回岗位清单"}
+        },
+        "returns": {"type": "string", "desc": "匹配报告文本"}
+      },
+      {
+        "name": "rank_jobs",
+        "description": "岗位推荐：把全部岗位按匹配度排序，返回前 N 个最适合的岗位。",
+        "parameters": {
+          "resume_text": {"type": "string", "required": true, "desc": "简历全文"},
+          "top": {"type": "integer", "required": false, "default": 3, "desc": "返回个数"}
+        },
+        "returns": {"type": "string", "desc": "推荐岗位排序文本"}
+      },
+      {
+        "name": "interview_question",
+        "description": "模拟面试出题：按岗位返回一道真实面试题及考察点。",
+        "parameters": {
+          "role": {"type": "string", "required": false, "desc": "岗位名，默认通用"},
+          "index": {"type": "integer", "required": false, "default": 0, "desc": "题目序号，从 0 开始"}
+        },
+        "returns": {"type": "string", "desc": "面试题文本"}
+      },
+      {
+        "name": "evaluate_answer",
+        "description": "面试回答点评：STAR 四要素 + 量化词 + 篇幅检测，打分并给改进建议。",
+        "parameters": {
+          "question": {"type": "string", "required": false, "desc": "面试题目"},
+          "answer": {"type": "string", "required": true, "desc": "用户回答原文"}
+        },
+        "returns": {"type": "string", "desc": "点评报告文本"}
+      },
+      {
+        "name": "career_plan",
+        "description": "职业路径规划：按目标（升本/就业）、专业和每周可投入小时，生成 N 周执行计划。",
+        "parameters": {
+          "goal": {"type": "string", "required": false, "default": "就业", "desc": "升本 或 就业"},
+          "major": {"type": "string", "required": false, "default": "数字媒体", "desc": "专业名"},
+          "hours_per_week": {"type": "integer", "required": false, "default": 10, "desc": "每周小时数"},
+          "weeks": {"type": "integer", "required": false, "default": 8, "desc": "周数"}
+        },
+        "returns": {"type": "string", "desc": "周计划文本"}
+      }
+    ]
+  }
+}
