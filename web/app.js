@@ -155,8 +155,9 @@ async function ask(q){
 
 async function handleImage(file){
   if(!file||!file.type.startsWith('image/')) return;
-  if(offlineMode){
-    bubble('离线模式不能做图片 OCR（识别依赖本地 tesseract 服务）。\n把简历文字粘给我，或先运行 python server.py。','bot');
+  const alive=await ensureBackend();
+  if(!alive){
+    bubble('连不上后端服务，图片 OCR 不可用。\n请确认 python server.py 正在运行；也可以把简历文字直接粘给我。','bot');
     return;
   }
   thumb.src=URL.createObjectURL(file); thumb.style.display='block';
@@ -327,7 +328,22 @@ document.getElementById('cfgSave').onclick = async () => {
   }
 };
 
-fetch('/api/profile').then(r=>r.json()).then(d=>{renderProfile(d.profile); engine.textContent='本地后端引擎';}).catch(()=>setMode(true));
+async function backendAlive(){
+  try{ const r=await fetch('/api/health'); return r.ok; }catch(e){ return false; }
+}
+async function refreshMode(){
+  const alive=await backendAlive();
+  if(alive){ offlineMode=false; engine.textContent='本地后端引擎'; return true; }
+  setMode(true); return false;
+}
+refreshMode();
+// 图片上传前再探一次后端：连得上就走 OCR，连不上才退离线提示
+async function ensureBackend(){
+  if(offlineMode) await refreshMode();
+  return !offlineMode;
+}
+
+fetch('/api/profile').then(r=>r.json()).then(d=>{renderProfile(d.profile);}).catch(()=>{});
 
 /* ------------------------ 模拟面试 ------------------------ */
 const mockBtn=$('mockBtn'), mockBox=$('mock'), mockRole=$('mockRole'), mockPersona=$('mockPersona');
@@ -546,7 +562,7 @@ micBtn.onclick=()=>{
     rec=new SR(); rec.lang='zh-CN'; rec.interimResults=false; rec.maxAlternatives=1;
     rec.onresult=e=>{
       const t=e.results[0][0].transcript;
-      input.value=(input.value?input.value+' ':'')+t;
+      input.value=(input.value?input.value:' ')+t;
       input.focus();
       bubble('（语音）'+t,'user');
       ask(t);
