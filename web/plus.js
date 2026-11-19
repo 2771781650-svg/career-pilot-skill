@@ -210,7 +210,7 @@
     if (saved && !force) { showTasks(saved); return; }
     var html = '<p style="font-size:13px;color:#475569;margin:0 0 10px">6 个格，30 秒。填完我直接告诉你今天先干哪 3 件。</p>' +
       '<div class="cp-form">' +
-      '<div class="cp-field"><label>学历 / 学校</label><input id="cfEdu" placeholder="如：河北能源职业技术学院 数字媒体 大专"></div>' +
+      '<div class="cp-field"><label>学历 / 学校</label><input id="cfEdu" placeholder="如：某某学院 数字媒体 大专"></div>' +
       '<div class="cp-field"><label>会什么（工具名，逗号隔开）</label><input id="cfSkill" placeholder="PS、剪映、3ds Max"></div>' +
       '<div class="cp-field"><label>目标岗位</label><select id="cfJob"></select></div>' +
       '<div class="cp-field"><label>每周能投入多少小时</label><input id="cfHours" type="number" min="0" max="80" placeholder="如 12"></div>' +
@@ -246,7 +246,7 @@
     if (!window.CareerDemo) return;
     var sentence = [c.edu, c.skills ? "会 " + c.skills : "", "想投" + c.target].filter(Boolean).join("，");
     var dp = CareerDemo.merge(getDP(), sentence);
-    if (c.edu) dp.edu = c.edu;                       // 表单填的优先，别被正则污染
+    if (c.edu) dp.edu = c.edu;
     if (c.skills) dp.skills = c.skills.split(/[、,，\s]+/).filter(Boolean);
     if (c.target) dp.target = c.target;
     setDP(dp);
@@ -257,7 +257,6 @@
       var row = pushRow(html, "bot");
       bindTasks(row);
     }
-    // 让智能体基于体检结果说一句推进话
     try {
       if (window.ask) ask((c.edu || "高职") + "，会" + (c.skills || "基础工具") + "，想投" + c.target +
         "，每周能投入" + (c.hours || 10) + "小时，最怕" + (c.fear || "面试"), { silent: true })
@@ -337,9 +336,9 @@
     add("离线引擎已加载", function () { return !!(D && D.JOBS && D.JOBS.length); });
     add("岗位库 ≥ 8 条", function () { return D.JOBS.length >= 8; });
     add("姓名抽取", function () { return D.extract("我叫张明，大专").name === "张明"; });
-    add("学历抽取", function () { return /大专/.test(D.extract("河北能源职业技术学院 数字媒体 大专").edu); });
+    add("学历抽取", function () { return /大专/.test(D.extract("某某学院 数字媒体 大专").edu); });
     add("技能抽取（剪映）", function () { return D.extract("会剪映和PS").skills.indexOf("剪映") !== -1; });
-    add("项目片段抽取", function () { return !!D.extract("做过大境门文创项目").projects; });
+    add("项目片段抽取", function () { return !!D.extract("做过校园文创项目").projects; });
     add("匹配分区间 0-100", function () { var s = D.score(D.JOBS[0], { skills: ["ps"], projects: "" }); return s >= 0 && s <= 100; });
     add("补齐技能后分数上升", function () {
       var j = D.JOBS[0];
@@ -376,7 +375,6 @@
     });
     add("离线缓存已注册", function () { return !!(navigator.serviceWorker && navigator.serviceWorker.controller) || "pending"; });
 
-    // 异步：后端健康检查（离线时记为跳过而不是失败）
     var pend = document.createElement("div");
     function finish(extra) {
       var list = tests.concat(extra || []);
@@ -402,7 +400,7 @@
           if (box) box.parentNode.removeChild(box);
           finish(extra);
         })
-        .catch(function () { /* 保持离线提示 */ });
+        .catch(function () {});
     }
     return row;
   }
@@ -447,7 +445,6 @@
     var memBtn = mkBtn("cpMemBtn", "M12 8v5l3 2M12 3a9 9 0 100 18 9 9 0 000-18", "记忆", function () { openMemory(); });
     [cardBtn, cmpBtn, scBtn, memBtn].forEach(function (b) { if (b) toolbar.appendChild(b); });
 
-    // 记忆注入：大模型回答前，带上你说过的原话
     try {
       if (window.CareerLLM && typeof CareerLLM.chatAs === "function") {
         var orig = CareerLLM.chatAs.bind(CareerLLM);
@@ -459,7 +456,6 @@
       }
     } catch (e) {}
 
-    // 刷新/重开页面后，档案还在（本机保存，不上传）
     try {
       var raw = localStorage.getItem("cp_profile");
       if (raw) {
@@ -468,7 +464,6 @@
       }
     } catch (e) {}
 
-    // 记录用户原话
     try {
       if (typeof window.ask === "function") {
         var origAsk = window.ask;
@@ -485,7 +480,6 @@
       }
     } catch (e) {}
 
-    // 首次进入：没建过档就弹一次体检卡（可跳过，只弹一次）
     setTimeout(function () {
       var saved = loadCard();
       if (saved) { showTasks(saved); return; }
